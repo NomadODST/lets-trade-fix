@@ -1,0 +1,29 @@
+{
+  "id": "lets-trade-fix",
+  "title": "Let's Trade Fix (Tidy5e Compatibility)",
+  "description": "Fixes the Lets Trade 5e module so it no longer crashes when used with Tidy5e sheets.",
+  "version": "1.0.0",
+  "authors": [
+    {
+      "name": "Konstantin Zahn"
+    }
+  ],
+  "compatibility": {
+    "minimum": "12",
+    "verified": "12"
+  },
+  "relationships": {
+    "requires": [
+      {
+        "id": "lets-trade-5e",
+        "type": "module"
+      }
+    ]
+  },
+  "scripts": [
+    "fix.js"
+  ],
+  "url": "https://github.com/YOURNAME/lets-trade-fix",
+  "manifest": "https://raw.githubusercontent.com/YOURNAME/lets-trade-fix/main/module.json",
+  "download": "https://github.com/YOURNAME/lets-trade-fix/archive/refs/heads/main.zip"
+}
