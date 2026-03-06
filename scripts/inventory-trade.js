@@ -1,6 +1,6 @@
 Hooks.once("ready", () => {
 
-  Hooks.on("getItemContextOptions", (html, options) => {
+  Hooks.on("dnd5e.getItemContextOptions", (html, options) => {
 
     options.push({
 
