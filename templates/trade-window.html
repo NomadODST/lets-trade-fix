@@ -1,12 +1,16 @@
 <div class="trade-ui">
 
-<div class="trade-column">
+<input class="search" placeholder="Search items">
 
-<h2>{{source.name}}</h2>
+<div class="trade-columns">
+
+<div class="trade-side">
+
+<h2>{{a.name}}</h2>
 
 <ul>
 {{#each itemsA}}
-<li class="item-a" data-id="{{this.id}}">
+<li class="item" data-id="{{this.id}}" data-side="A">
 <img src="{{this.img}}" width="24">
 {{this.name}}
 </li>
@@ -16,15 +20,17 @@
 <label>Gold</label>
 <input class="gold-a" type="number" value="0">
 
+<button class="accept-a">Accept</button>
+
 </div>
 
-<div class="trade-column">
+<div class="trade-side">
 
-<h2>{{target.name}}</h2>
+<h2>{{b.name}}</h2>
 
 <ul>
 {{#each itemsB}}
-<li class="item-b" data-id="{{this.id}}">
+<li class="item" data-id="{{this.id}}" data-side="B">
 <img src="{{this.img}}" width="24">
 {{this.name}}
 </li>
@@ -34,10 +40,16 @@
 <label>Gold</label>
 <input class="gold-b" type="number" value="0">
 
+<button class="accept-b">Accept</button>
+
+</div>
+
 </div>
 
 <div class="trade-actions">
-<button class="accept-trade">Accept Trade</button>
+
+<button class="cancel">Cancel Trade</button>
+
 </div>
 
 </div>
