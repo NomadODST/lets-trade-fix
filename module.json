@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "authors": [
     {
-      "name": "Konstantin Zahn"
+      "name": "NomadODST"
     }
   ],
   "compatibility": {
@@ -23,7 +23,7 @@
   "scripts": [
     "fix.js"
   ],
-  "url": "https://github.com/YOURNAME/lets-trade-fix",
-  "manifest": "https://raw.githubusercontent.com/YOURNAME/lets-trade-fix/main/module.json",
-  "download": "https://github.com/YOURNAME/lets-trade-fix/archive/refs/heads/main.zip"
+  "url": "https://github.com/NomadODST/lets-trade-fix",
+  "manifest": "https://raw.githubusercontent.com/NomadODST/lets-trade-fix/main/module.json",
+  "download": "https://github.com/NomadODST/lets-trade-fix/archive/refs/heads/main.zip"
 }
