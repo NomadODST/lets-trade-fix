@@ -52,6 +52,7 @@ class TradeApp extends Application {
       acceptA: s.acceptA,
       acceptB: s.acceptB
     };
+
   }
 
   activateListeners(html) {
@@ -107,9 +108,9 @@ class TradeApp extends Application {
 
     const s = this.session;
 
-    let actor = side === "A" ? s.actorA : s.actorB;
-
+    const actor = side === "A" ? s.actorA : s.actorB;
     const item = actor.items.get(itemId);
+
     if (!item) return;
 
     const max = item.system.quantity ?? 1;
@@ -117,9 +118,7 @@ class TradeApp extends Application {
     const qty = await Dialog.prompt({
 
       title: "Quantity",
-
       content: `<input type="number" value="1" min="1" max="${max}">`,
-
       callback: html => Number(html.find("input").val())
 
     });
@@ -173,7 +172,6 @@ class TradeApp extends Application {
       const current = item.system.quantity ?? 1;
 
       const itemData = item.toObject();
-
       itemData.system.quantity = qty;
 
       await toActor.createEmbeddedDocuments("Item", [itemData]);
