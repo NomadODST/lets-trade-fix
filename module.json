@@ -1,11 +1,11 @@
 {
   "id": "lets-trade-fix",
   "title": "Let's Trade Fix (Tidy5e Compatibility)",
-  "description": "Fixes the Lets Trade 5e module so it no longer crashes when used with Tidy5e sheets.",
+  "description": "Removes the broken sheet injection from Lets Trade 5e that causes crashes with Tidy5e sheets. Trading functionality remains intact.",
   "version": "1.0.0",
   "authors": [
     {
-      "name": "NomadODST"
+      "name": "Konstantin Zahn"
     }
   ],
   "compatibility": {
@@ -21,7 +21,7 @@
     ]
   },
   "scripts": [
-    "fix.js"
+    "scripts/fix.js"
   ],
   "url": "https://github.com/NomadODST/lets-trade-fix",
   "manifest": "https://raw.githubusercontent.com/NomadODST/lets-trade-fix/main/module.json",
