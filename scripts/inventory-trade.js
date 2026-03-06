@@ -1,333 +1,150 @@
 /**
- * simple-token-trade | trade-app.js
- * The main trade window UI.
+ * simple-token-trade | inventory-trade.js
+ * Hooks into the character sheet item context menu to offer a "Trade" option.
+ * Compatible with: dnd5e default sheet, Tidy5e Sheet (tidy5e-sheet),
+ *                  Character Sheet Plus, and other dnd5e-based sheets.
  */
 
 import { TradeSession } from "./trade-session.js";
+import { TradeApp }     from "./trade-app.js";
 
-const TRADEABLE_TYPES = new Set([
-  "weapon", "equipment", "consumable", "tool",
-  "loot", "container", "backpack"
-]);
+// ─── Item ID resolution (multi-sheet compatible) ──────────────────────────────
 
-export class TradeApp extends Application {
-  constructor(session, initialItemId = null) {
-    super();
-    this.session       = session;
-    this.initialItemId = initialItemId;
+/**
+ * Extract an item ID from a context-menu list element.
+ *
+ * Different sheets store the item ID in different places:
+ *   - dnd5e default:  data-item-id  (jQuery .data() or dataset)
+ *   - Tidy5e v0.x:    data-item-id  (same, but wrapped in a deeper element)
+ *   - Tidy5e v1.x+:   data-tidy-item-id  OR  closest [data-item-id]
+ *   - fallback:       walk up the DOM looking for any known attribute
+ *
+ * @param {jQuery|HTMLElement} li
+ * @returns {string|null}
+ */
+function _resolveItemId(li) {
+  // Normalise: accept both jQuery objects and raw HTMLElements
+  const el = li instanceof jQuery ? li[0] : li;
+
+  // 1) Standard dnd5e attribute on the element itself
+  if (el.dataset?.itemId)      return el.dataset.itemId;
+
+  // 2) Tidy5e v1.x dedicated attribute
+  if (el.dataset?.tidyItemId)  return el.dataset.tidyItemId;
+
+  // 3) jQuery .data() cache (may differ from dataset after dynamic updates)
+  if (li instanceof jQuery) {
+    const jqId = li.data("item-id") ?? li.data("tidy-item-id");
+    if (jqId) return String(jqId);
   }
 
-  static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      id:          "simple-token-trade",
-      title:       "Trade",
-      template:    "modules/simple-token-trade/templates/trade-window.html",
-      width:       640,
-      height:      560,
-      resizable:   true,
-      classes:     ["simple-token-trade"],
-      dragDrop:    [{ dropSelector: ".trade-offer-drop" }],
-    });
-  }
-
-  // ─── Data ─────────────────────────────────────────────────────────────────
-
-  _mySide() {
-    const myActors = new Set(
-      game.actors.filter(a => a.isOwner).map(a => a.id)
+  // 4) Walk up the DOM – Tidy5e sometimes puts the attribute on a parent row
+  const ancestor = el.closest(
+    "[data-item-id], [data-tidy-item-id], [data-entry-id]"
+  );
+  if (ancestor) {
+    return (
+      ancestor.dataset.itemId     ??
+      ancestor.dataset.tidyItemId ??
+      ancestor.dataset.entryId    ??
+      null
     );
-    if (myActors.has(this.session.actorAId)) return "A";
-    if (myActors.has(this.session.actorBId)) return "B";
-    return null;
   }
 
-  _getInventory(actor) {
-    if (!actor) return [];
-    return actor.items
-      .filter(i => TRADEABLE_TYPES.has(i.type))
-      .map(i => ({
-        id:       i.id,
-        name:     i.name,
-        img:      i.img,
-        quantity: i.system?.quantity ?? 1,
-        price:    i.system?.price?.value ?? i.system?.price ?? 0,
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+  return null;
+}
+
+// ─── Context Menu Hook ───────────────────────────────────────────────────────
+
+Hooks.on("getActorSheetItemContextOptions", (sheet, options) => {
+  options.push({
+    name: "Trade",
+    icon: '<i class="fas fa-exchange-alt"></i>',
+    condition: (li) => {
+      const itemId = _resolveItemId(li);
+      if (!itemId) return false;
+      const item = sheet.actor?.items?.get(itemId);
+      if (!item) return false;
+      const TRADEABLE = new Set([
+        "weapon","equipment","consumable","tool","loot","container","backpack"
+      ]);
+      return TRADEABLE.has(item.type) && sheet.actor.isOwner;
+    },
+    callback: (li) => {
+      const itemId = _resolveItemId(li);
+      if (!itemId) return;
+      _openTradeDialog(sheet.actor, itemId);
+    },
+  });
+});
+
+// ─── Player / Actor Selection ─────────────────────────────────────────────────
+
+async function _openTradeDialog(actorA, initialItemId = null) {
+  const candidates = _buildCandidates(actorA);
+
+  if (!candidates.length) {
+    ui.notifications.warn("No other actors available to trade with.");
+    return;
   }
 
-  _resolveOffer(actor, offer) {
-    if (!actor) return [];
-    return offer.flatMap(({ itemId, quantity }) => {
-      const item = actor.items.get(itemId);
-      if (!item) return [];
-      return [{ id: item.id, name: item.name, img: item.img, quantity }];
-    });
-  }
+  const optionsHTML = candidates
+    .map(a => `<option value="${a.id}">${a.name}</option>`)
+    .join("");
 
-  getData() {
-    const { actorA, actorB, offerA, offerB, goldA, goldB, acceptA, acceptB } = this.session;
-    const side = this._mySide();
-
-    return {
-      actorA,
-      actorB,
-      inventoryA:   this._getInventory(actorA),
-      inventoryB:   this._getInventory(actorB),
-      offerA:       this._resolveOffer(actorA, offerA),
-      offerB:       this._resolveOffer(actorB, offerB),
-      goldA,
-      goldB,
-      acceptA,
-      acceptB,
-      side,
-      isA:          side === "A",
-      isB:          side === "B",
-      bothAccepted: acceptA && acceptB,
-      canExecute:   acceptA && acceptB && (side === "A"),
-    };
-  }
-
-  // ─── Rendering ────────────────────────────────────────────────────────────
-
-  async _render(force, options) {
-    await super._render(force, options);
-    if (this.initialItemId) {
-      const id = this.initialItemId;
-      this.initialItemId = null;
-      this._addItem(id);
-    }
-  }
-
-  // ─── Listeners ────────────────────────────────────────────────────────────
-
-  activateListeners(html) {
-    super.activateListeners(html);
-    const side = this._mySide();
-
-    html.find(".inv-item[data-item-id]").on("click", ev => {
-      this._addItem(ev.currentTarget.dataset.itemId);
-    });
-
-    html.find(".offer-item .remove-btn").on("click", ev => {
-      this._removeItem(ev.currentTarget.closest("[data-item-id]").dataset.itemId);
-    });
-
-    html.find(".offer-item .qty-input").on("change", ev => {
-      const itemId = ev.currentTarget.closest("[data-item-id]").dataset.itemId;
-      this._setItemQty(itemId, Math.max(1, parseInt(ev.currentTarget.value) || 1));
-    });
-
-    const goldSelector = side === "A" ? "#goldA" : "#goldB";
-    html.find(goldSelector).on("change", ev => {
-      this._setGold(Math.max(0, parseInt(ev.currentTarget.value) || 0));
-    });
-
-    html.find(".accept-btn").on("click", () => this._toggleAccept());
-    html.find(".execute-btn").on("click", () => this._executeTrade());
-    html.find(".cancel-btn").on("click", () => this._cancelTrade());
-  }
-
-  // ─── Drag & Drop ──────────────────────────────────────────────────────────
-
-  async _onDrop(event) {
-    const data = TextEditor.getDragEventData(event);
-    if (data?.type !== "Item") return;
-
-    let item;
-    try { item = await fromUuid(data.uuid); } catch { return; }
-    if (!item || !TRADEABLE_TYPES.has(item.type)) return;
-
-    const actor = item.parent;
-    const side  = this._mySide();
-    const myActorId = side === "A" ? this.session.actorAId : this.session.actorBId;
-    if (!actor || actor.id !== myActorId) return;
-
-    this._addItem(item.id);
-  }
-
-  // ─── State Mutations ──────────────────────────────────────────────────────
-
-  _myOffer() {
-    return this._mySide() === "A" ? this.session.offerA : this.session.offerB;
-  }
-
-  _myActor() {
-    return this._mySide() === "A" ? this.session.actorA : this.session.actorB;
-  }
-
-  _addItem(itemId) {
-    const side = this._mySide();
-    if (!side) return;
-
-    const actor = this._myActor();
-    if (!actor) return;
-
-    const item = actor.items.get(itemId);
-    if (!item || !TRADEABLE_TYPES.has(item.type)) return;
-
-    const offer    = this._myOffer();
-    const existing = offer.find(e => e.itemId === itemId);
-
-    if (existing) {
-      existing.quantity = Math.min(existing.quantity + 1, item.system?.quantity ?? 1);
-    } else {
-      offer.push({ itemId, quantity: 1 });
-    }
-
-    this.session.resetAccept();
-    this._syncAndRender();
-  }
-
-  _removeItem(itemId) {
-    if (!this._mySide()) return;
-    const offer = this._myOffer();
-    const idx   = offer.findIndex(e => e.itemId === itemId);
-    if (idx !== -1) offer.splice(idx, 1);
-    this.session.resetAccept();
-    this._syncAndRender();
-  }
-
-  _setItemQty(itemId, quantity) {
-    if (!this._mySide()) return;
-    const actor  = this._myActor();
-    const maxQty = actor?.items.get(itemId)?.system?.quantity ?? 1;
-    const entry  = this._myOffer().find(e => e.itemId === itemId);
-    if (entry) entry.quantity = Math.min(Math.max(1, quantity), maxQty);
-    this.session.resetAccept();
-    this._syncAndRender();
-  }
-
-  _setGold(amount) {
-    const side = this._mySide();
-    if (!side) return;
-    const maxGp  = this._myActor()?.system?.currency?.gp ?? 0;
-    const capped = Math.min(amount, maxGp);
-    if (side === "A") this.session.goldA = capped;
-    else              this.session.goldB = capped;
-    this.session.resetAccept();
-    this._syncAndRender();
-  }
-
-  _toggleAccept() {
-    const side = this._mySide();
-    if (!side) return;
-    if (side === "A") this.session.acceptA = !this.session.acceptA;
-    else              this.session.acceptB = !this.session.acceptB;
-    globalThis.simpleTrade.socket.sendAcceptUpdate(this.session);
-    this.render(false);
-  }
-
-  _syncAndRender() {
-    globalThis.simpleTrade.socket.sendTradeUpdate(this.session);
-    this.render(false);
-  }
-
-  // ─── Trade Execution ──────────────────────────────────────────────────────
-
-  async _executeTrade() {
-    const { session } = this;
-    if (!session.acceptA || !session.acceptB) return;
-
-    const actorA = session.actorA;
-    const actorB = session.actorB;
-    if (!actorA || !actorB) {
-      ui.notifications.error("One or both actors not found.");
-      return;
-    }
-
-    try {
-      await this._transferItems(actorA, actorB, session.offerA);
-      await this._transferItems(actorB, actorA, session.offerB);
-      await this._transferGold(actorA, actorB, session.goldA, session.goldB);
-      await this._postTradeMessage(actorA, actorB, session);
-    } catch (err) {
-      ui.notifications.error("Trade failed: " + err.message);
-      console.error("simple-token-trade | Trade error:", err);
-      return;
-    }
-
-    globalThis.simpleTrade.socket.sendTradeExecuted(session.id);
-    session.destroy();
-    this.close({ noSocket: true });
-  }
-
-  async _transferItems(from, to, offer) {
-    for (const { itemId, quantity } of offer) {
-      const item     = from.items.get(itemId);
-      if (!item) continue;
-      const totalQty = item.system?.quantity ?? 1;
-
-      if (quantity >= totalQty) {
-        await to.createEmbeddedDocuments("Item", [this._itemCreateData(item, quantity)]);
-        await from.deleteEmbeddedDocuments("Item", [itemId]);
-      } else {
-        const existing = to.items.find(i => i.name === item.name && i.type === item.type);
-        if (existing) {
-          await existing.update({ "system.quantity": (existing.system?.quantity ?? 0) + quantity });
-        } else {
-          await to.createEmbeddedDocuments("Item", [this._itemCreateData(item, quantity)]);
-        }
-        await item.update({ "system.quantity": totalQty - quantity });
-      }
-    }
-  }
-
-  _itemCreateData(item, quantity) {
-    const data = item.toObject();
-    data.system.quantity = quantity;
-    return data;
-  }
-
-  async _transferGold(actorA, actorB, goldA, goldB) {
-    const gpA = actorA.system?.currency?.gp ?? 0;
-    const gpB = actorB.system?.currency?.gp ?? 0;
-    await actorA.update({ "system.currency.gp": gpA - goldA + goldB });
-    await actorB.update({ "system.currency.gp": gpB - goldB + goldA });
-  }
-
-  async _postTradeMessage(actorA, actorB, session) {
-    const { offerA, offerB, goldA, goldB } = session;
-
-    const formatOffer = (actor, offer, gold) => {
-      const lines = offer.flatMap(({ itemId, quantity }) => {
-        const item = actor.items.get(itemId);
-        return item ? [`<li>${item.name} ×${quantity}</li>`] : [];
-      });
-      if (gold > 0) lines.push(`<li>${gold} gp</li>`);
-      return lines.length ? `<ul>${lines.join("")}</ul>` : "<em>(nothing)</em>";
-    };
-
-    const content = `
-      <div class="simple-token-trade-chat">
-        <h3>⚖️ Trade Completed</h3>
-        <div class="trade-summary">
-          <div class="trade-side">
-            <strong>${actorA.name}</strong> traded to <strong>${actorB.name}</strong>:
-            ${formatOffer(actorA, offerA, goldA)}
-          </div>
-          <div class="trade-side">
-            <strong>${actorB.name}</strong> traded to <strong>${actorA.name}</strong>:
-            ${formatOffer(actorB, offerB, goldB)}
-          </div>
+  const content = `
+    <form>
+      <div class="form-group">
+        <label>Trade with:</label>
+        <div class="form-fields">
+          <select name="actorId">${optionsHTML}</select>
         </div>
-      </div>`;
+      </div>
+    </form>`;
 
-    await ChatMessage.create({ content, type: CONST.CHAT_MESSAGE_TYPES?.OTHER ?? 0 });
+  let actorBId;
+  try {
+    actorBId = await Dialog.prompt({
+      title:    "Start Trade",
+      content,
+      label:    "Open Trade",
+      callback: (html) => html.find('[name="actorId"]').val(),
+    });
+  } catch {
+    return;
   }
 
-  // ─── Cancel ───────────────────────────────────────────────────────────────
+  if (!actorBId) return;
+  const actorB = game.actors.get(actorBId);
+  if (!actorB) return;
 
-  _cancelTrade() {
-    globalThis.simpleTrade.socket.sendTradeCancel(this.session.id);
-    this.session.destroy();
-    this.close({ noSocket: true });
+  const session = new TradeSession(actorA.id, actorB.id);
+  const app     = new TradeApp(session, initialItemId);
+  app.render(true);
+
+  globalThis.simpleTrade.socket.sendTradeRequest(session, initialItemId);
+}
+
+// ─── Candidate Building ───────────────────────────────────────────────────────
+
+function _buildCandidates(actorA) {
+  const result = [];
+  const seen   = new Set();
+
+  for (const user of game.users) {
+    if (user.id === game.user.id || !user.character) continue;
+    if (user.character.id === actorA.id || seen.has(user.character.id)) continue;
+    seen.add(user.character.id);
+    result.push(user.character);
   }
 
-  async close(options = {}) {
-    if (!options.noSocket) {
-      globalThis.simpleTrade.socket?.sendTradeCancel(this.session?.id);
-      this.session?.destroy();
-    }
-    return super.close(options);
+  for (const tokenDoc of game.scenes?.active?.tokens ?? []) {
+    const actor = tokenDoc.actor;
+    if (!actor || actor.id === actorA.id || seen.has(actor.id)) continue;
+    if (!["character", "npc"].includes(actor.type)) continue;
+    seen.add(actor.id);
+    result.push(actor);
   }
+
+  return result;
 }
