@@ -1,93 +1,173 @@
-class TradeApp extends Application {
+class TradeApp extends Application{
 
- constructor(source,target){
-  super();
-  this.source=source;
-  this.target=target;
-  this.offerA=[];
-  this.offerB=[];
-  this.goldA=0;
-  this.goldB=0;
- }
+constructor(a,b,id){
 
- static get defaultOptions(){
-  return mergeObject(super.defaultOptions,{
-   id:"trade-window",
-   template:"modules/simple-token-trade/templates/trade-window.html",
-   width:700,
-   height:"auto",
-   resizable:true
-  });
- }
+super();
 
- getData(){
+this.id=id;
+this.a=a;
+this.b=b;
 
-  return{
-   source:this.source,
-   target:this.target,
-   itemsA:this.source.items.contents,
-   itemsB:this.target.items.contents,
-   offerA:this.offerA,
-   offerB:this.offerB,
-   goldA:this.goldA,
-   goldB:this.goldB
-  };
+this.offerA=[];
+this.offerB=[];
 
- }
+this.goldA=0;
+this.goldB=0;
 
- activateListeners(html){
+this.acceptA=false;
+this.acceptB=false;
 
-  html.find(".item-a").click(ev=>{
-   const id=ev.currentTarget.dataset.id;
-   this.offerA.push(id);
-   this.render();
-  });
+}
 
-  html.find(".item-b").click(ev=>{
-   const id=ev.currentTarget.dataset.id;
-   this.offerB.push(id);
-   this.render();
-  });
+static get defaultOptions(){
 
-  html.find(".gold-a").change(ev=>{
-   this.goldA=Number(ev.target.value);
-  });
+return mergeObject(super.defaultOptions,{
+id:"trade-window",
+template:"modules/simple-token-trade/templates/trade-window.html",
+width:900,
+height:"auto",
+resizable:true
+});
 
-  html.find(".gold-b").change(ev=>{
-   this.goldB=Number(ev.target.value);
-  });
+}
 
-  html.find(".accept-trade").click(()=>this.executeTrade());
+getData(){
 
- }
+return{
+a:this.a,
+b:this.b,
+itemsA:this.a.items.contents,
+itemsB:this.b.items.contents,
+offerA:this.offerA,
+offerB:this.offerB,
+goldA:this.goldA,
+goldB:this.goldB,
+acceptA:this.acceptA,
+acceptB:this.acceptB
+};
 
- async executeTrade(){
+}
 
-  for(const id of this.offerA){
-   const item=this.source.items.get(id);
-   const data=item.toObject();
-   await this.target.createEmbeddedDocuments("Item",[data]);
-   await item.delete();
-  }
+activateListeners(html){
 
-  for(const id of this.offerB){
-   const item=this.target.items.get(id);
-   const data=item.toObject();
-   await this.source.createEmbeddedDocuments("Item",[data]);
-   await item.delete();
-  }
+html.find(".item").click(ev=>{
 
-  const gpA=this.source.system.currency.gp||0;
-  const gpB=this.target.system.currency.gp||0;
+const id=ev.currentTarget.dataset.id;
+const side=ev.currentTarget.dataset.side;
 
-  await this.source.update({"system.currency.gp":gpA-this.goldA+this.goldB});
-  await this.target.update({"system.currency.gp":gpB-this.goldB+this.goldA});
+if(side==="A") this.offerA.push(id);
+if(side==="B") this.offerB.push(id);
 
-  ui.notifications.info("Trade complete.");
+this.sync();
 
-  this.close();
+});
 
- }
+html.find(".gold-a").change(ev=>{
+this.goldA=Number(ev.target.value);
+this.sync();
+});
+
+html.find(".gold-b").change(ev=>{
+this.goldB=Number(ev.target.value);
+this.sync();
+});
+
+html.find(".accept-a").click(()=>{
+this.acceptA=true;
+this.sync();
+this.checkTrade();
+});
+
+html.find(".accept-b").click(()=>{
+this.acceptB=true;
+this.sync();
+this.checkTrade();
+});
+
+html.find(".cancel").click(()=>{
+this.close();
+});
+
+html.find(".search").keyup(ev=>{
+const term=ev.target.value.toLowerCase();
+html.find(".item").each((i,e)=>{
+const name=e.innerText.toLowerCase();
+$(e).toggle(name.includes(term));
+});
+});
+
+}
+
+sync(){
+
+game.simpleTrade.send({
+id:this.id,
+type:"update",
+state:this.serialize()
+});
+
+this.render();
+
+}
+
+serialize(){
+
+return{
+offerA:this.offerA,
+offerB:this.offerB,
+goldA:this.goldA,
+goldB:this.goldB,
+acceptA:this.acceptA,
+acceptB:this.acceptB
+};
+
+}
+
+receiveSocket(data){
+
+if(data.type!=="update") return;
+
+Object.assign(this,data.state);
+
+this.render();
+
+}
+
+async checkTrade(){
+
+if(!(this.acceptA && this.acceptB)) return;
+
+for(const id of this.offerA){
+
+const item=this.a.items.get(id);
+const data=item.toObject();
+
+await this.b.createEmbeddedDocuments("Item",[data]);
+await item.delete();
+
+}
+
+for(const id of this.offerB){
+
+const item=this.b.items.get(id);
+const data=item.toObject();
+
+await this.a.createEmbeddedDocuments("Item",[data]);
+await item.delete();
+
+}
+
+const gpA=this.a.system.currency.gp||0;
+const gpB=this.b.system.currency.gp||0;
+
+await this.a.update({"system.currency.gp":gpA-this.goldA+this.goldB});
+await this.b.update({"system.currency.gp":gpB-this.goldB+this.goldA});
+
+ui.notifications.info("Trade completed.");
+
+this.close();
+
+}
 
 }
 
