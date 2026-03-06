@@ -1,1 +1,44 @@
-1
+<div class="trade-window">
+
+<div class="trade-column">
+
+<h2>{{source.name}}</h2>
+
+<ul>
+{{#each sourceItems}}
+<li>
+<img src="{{this.img}}" width="24">
+{{this.name}}
+<button class="give-item" data-item="{{this.id}}">→</button>
+</li>
+{{/each}}
+</ul>
+
+</div>
+
+<div class="trade-column">
+
+<h2>{{target.name}}</h2>
+
+<ul>
+{{#each targetItems}}
+<li>
+<button class="take-item" data-item="{{this.id}}">←</button>
+<img src="{{this.img}}" width="24">
+{{this.name}}
+</li>
+{{/each}}
+</ul>
+
+</div>
+
+<div class="trade-gold-section">
+
+<label>Gold</label>
+<input type="number" name="gold" value="0">
+
+<button class="trade-gold">Transfer Gold</button>
+
+</div>
+
+</div>
