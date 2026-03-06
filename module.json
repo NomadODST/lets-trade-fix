@@ -1,12 +1,10 @@
 {
   "id": "simple-token-trade",
   "title": "Simple Token Trade",
-  "description": "Trade items and gold between tokens via right-click context menu.",
-  "version": "1.0.0",
+  "description": "Trade items and gold between tokens with a modern interface.",
+  "version": "2.0.0",
   "authors": [
-    {
-      "name": "Konstantin Zahn"
-    }
+    { "name": "Konstantin Zahn" }
   ],
   "compatibility": {
     "minimum": "12",
@@ -14,6 +12,9 @@
   },
   "scripts": [
     "scripts/trade.js"
+  ],
+  "styles": [
+    "styles/trade.css"
   ],
   "url": "https://github.com/NomadODST/simple-token-trade",
   "manifest": "https://raw.githubusercontent.com/NomadODST/simple-token-trade/main/module.json",
