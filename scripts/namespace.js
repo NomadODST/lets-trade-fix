@@ -1,11 +1,16 @@
+/* ----------------------------------------- */
+/* GLOBAL NAMESPACE                          */
+/* ----------------------------------------- */
+
 globalThis.simpleTrade = globalThis.simpleTrade || {};
 
-Hooks.once("init", () => {
+/* Foundry lädt Scripts bevor Hooks laufen,
+   deshalb Namespace sofort registrieren */
+if (!globalThis.game) globalThis.game = {};
 
-  game.simpleTrade = globalThis.simpleTrade;
+game.simpleTrade = globalThis.simpleTrade;
 
-  game.simpleTrade.sessions = {};
+/* Session Container */
+game.simpleTrade.sessions = game.simpleTrade.sessions || {};
 
-  console.log("Simple Token Trade | Namespace ready");
-
-});
+console.log("Simple Token Trade | Namespace initialized");
