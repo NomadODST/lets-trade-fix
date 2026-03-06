@@ -1,15 +1,3 @@
-/* -------------------------------------------- */
-/* Namespace sicherstellen */
-/* -------------------------------------------- */
-
-globalThis.simpleTrade ??= {};
-game.simpleTrade ??= simpleTrade;
-
-
-/* -------------------------------------------- */
-/* TradeSession Klasse */
-/* -------------------------------------------- */
-
 class TradeSession {
 
   constructor(actorA, actorB) {
@@ -35,7 +23,6 @@ class TradeSession {
     this.app = new game.simpleTrade.TradeApp(this);
     this.app.render(true);
 
-    game.simpleTrade.sessions ??= {};
     game.simpleTrade.sessions[this.id] = this;
 
   }
@@ -47,26 +34,6 @@ class TradeSession {
 
   }
 
-  serialize() {
-
-    return {
-      offerA: this.offerA,
-      offerB: this.offerB,
-      goldA: this.goldA,
-      goldB: this.goldB,
-      acceptA: this.acceptA,
-      acceptB: this.acceptB
-    };
-
-  }
-
 }
 
-
-/* -------------------------------------------- */
-/* Registrierung */
-/* -------------------------------------------- */
-
 game.simpleTrade.TradeSession = TradeSession;
-
-console.log("Simple Token Trade | TradeSession registered");
