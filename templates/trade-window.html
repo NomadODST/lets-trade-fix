@@ -1,70 +1,68 @@
 <div class="trade-container">
 
-  <section class="trade-side">
+<div class="trade-side">
 
-    <h2>{{actorA.name}}</h2>
+<h2>{{actorA.name}}</h2>
 
-    <div class="inventory">
+<div class="inventory">
 
-      {{#each itemsA}}
+{{#each itemsA}}
+<div class="item" data-id="{{id}}" data-side="A">
 
-      <div class="item" data-id="{{this.id}}" data-side="A">
+<img src="{{img}}">
 
-        <img src="{{this.img}}" width="24" height="24">
-        {{this.name}}
+<div class="item-info">
+<div class="name">{{name}}</div>
+<div class="meta">
+Qty: {{quantity}} • Value: {{price}} gp
+</div>
+</div>
 
-      </div>
+</div>
+{{/each}}
 
-      {{/each}}
+</div>
 
-    </div>
+Gold:  
+<input class="gold-a" type="number" value="{{goldA}}" min="0">
 
-    <div class="gold">
+<button class="accept-a">Accept</button>
 
-      Gold:
-      <input class="gold-a" type="number" value="{{goldA}}" min="0">
-
-    </div>
-
-    <button class="accept-a">Accept</button>
-
-  </section>
+</div>
 
 
-  <section class="trade-side">
+<div class="trade-side">
 
-    <h2>{{actorB.name}}</h2>
+<h2>{{actorB.name}}</h2>
 
-    <div class="inventory">
+<div class="inventory">
 
-      {{#each itemsB}}
+{{#each itemsB}}
+<div class="item" data-id="{{id}}" data-side="B">
 
-      <div class="item" data-id="{{this.id}}" data-side="B">
+<img src="{{img}}">
 
-        <img src="{{this.img}}" width="24" height="24">
-        {{this.name}}
+<div class="item-info">
+<div class="name">{{name}}</div>
+<div class="meta">
+Qty: {{quantity}} • Value: {{price}} gp
+</div>
+</div>
 
-      </div>
+</div>
+{{/each}}
 
-      {{/each}}
+</div>
 
-    </div>
+Gold:  
+<input class="gold-b" type="number" value="{{goldB}}" min="0">
 
-    <div class="gold">
+<button class="accept-b">Accept</button>
 
-      Gold:
-      <input class="gold-b" type="number" value="{{goldB}}" min="0">
+</div>
 
-    </div>
-
-    <button class="accept-b">Accept</button>
-
-  </section>
-
-  <div class="trade-controls">
-
-    <button class="cancel">Cancel</button>
-
-  </div>
+<div class="trade-controls">
+<button class="cancel">Cancel</button>
+</div>
 
 </div>
