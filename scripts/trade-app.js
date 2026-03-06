@@ -1,21 +1,10 @@
 class TradeApp extends Application{
 
-constructor(a,b,id){
+constructor(session){
 
 super();
 
-this.id=id;
-this.a=a;
-this.b=b;
-
-this.offerA=[];
-this.offerB=[];
-
-this.goldA=0;
-this.goldB=0;
-
-this.acceptA=false;
-this.acceptB=false;
+this.session=session;
 
 }
 
@@ -25,7 +14,7 @@ return mergeObject(super.defaultOptions,{
 id:"trade-window",
 template:"modules/simple-token-trade/templates/trade-window.html",
 width:900,
-height:"auto",
+height:600,
 resizable:true
 });
 
@@ -33,135 +22,200 @@ resizable:true
 
 getData(){
 
+const s=this.session;
+
 return{
-a:this.a,
-b:this.b,
-itemsA:this.a.items.contents,
-itemsB:this.b.items.contents,
-offerA:this.offerA,
-offerB:this.offerB,
-goldA:this.goldA,
-goldB:this.goldB,
-acceptA:this.acceptA,
-acceptB:this.acceptB
+a:s.actorA,
+b:s.actorB,
+itemsA:s.actorA.items.contents,
+itemsB:s.actorB.items.contents,
+offerA:s.offerA,
+offerB:s.offerB,
+goldA:s.goldA,
+goldB:s.goldB,
+acceptA:s.acceptA,
+acceptB:s.acceptB
 };
 
 }
 
 activateListeners(html){
 
-html.find(".item").click(ev=>{
+const s=this.session;
 
-const id=ev.currentTarget.dataset.id;
-const side=ev.currentTarget.dataset.side;
 
-if(side==="A") this.offerA.push(id);
-if(side==="B") this.offerB.push(id);
+html.find(".item").each((i,e)=>{
 
-this.sync();
+e.draggable=true;
 
 });
 
-html.find(".gold-a").change(ev=>{
-this.goldA=Number(ev.target.value);
-this.sync();
+
+html.find(".item").on("dragstart",ev=>{
+
+ev.originalEvent.dataTransfer.setData(
+"text/plain",
+ev.currentTarget.dataset.id
+);
+
 });
 
-html.find(".gold-b").change(ev=>{
-this.goldB=Number(ev.target.value);
-this.sync();
+
+html.find(".offer-slot").on("dragover",ev=>ev.preventDefault());
+
+
+html.find(".offer-slot").on("drop",ev=>{
+
+const id=ev.originalEvent.dataTransfer.getData("text/plain");
+
+this.addItem(id,ev.currentTarget.dataset.side);
+
 });
+
 
 html.find(".accept-a").click(()=>{
-this.acceptA=true;
-this.sync();
+
+s.acceptA=true;
+
+game.simpleTrade.sync(s);
+
 this.checkTrade();
+
 });
+
 
 html.find(".accept-b").click(()=>{
-this.acceptB=true;
-this.sync();
+
+s.acceptB=true;
+
+game.simpleTrade.sync(s);
+
 this.checkTrade();
+
 });
 
-html.find(".cancel").click(()=>{
-this.close();
-});
+
+html.find(".cancel").click(()=>this.close());
+
 
 html.find(".search").keyup(ev=>{
+
 const term=ev.target.value.toLowerCase();
+
 html.find(".item").each((i,e)=>{
-const name=e.innerText.toLowerCase();
-$(e).toggle(name.includes(term));
+
+$(e).toggle(e.innerText.toLowerCase().includes(term));
+
 });
+
+});
+
+
+html.find(".gold-a").change(ev=>{
+
+s.goldA=Number(ev.target.value);
+
+s.resetAccept();
+
+game.simpleTrade.sync(s);
+
+});
+
+
+html.find(".gold-b").change(ev=>{
+
+s.goldB=Number(ev.target.value);
+
+s.resetAccept();
+
+game.simpleTrade.sync(s);
+
 });
 
 }
 
-sync(){
+async addItem(itemId,side){
 
-game.simpleTrade.send({
-id:this.id,
-type:"update",
-state:this.serialize()
+const s=this.session;
+
+let item;
+
+if(side==="A") item=s.actorA.items.get(itemId);
+if(side==="B") item=s.actorB.items.get(itemId);
+
+if(!item) return;
+
+
+const qty=await Dialog.prompt({
+title:"Quantity",
+content:`<input type="number" value="1" min="1" max="${item.system.quantity||1}">`,
+callback:html=>Number(html.find("input").val())
 });
+
+
+if(side==="A")
+s.offerA.push({id:itemId,qty});
+
+if(side==="B")
+s.offerB.push({id:itemId,qty});
+
+s.resetAccept();
+
+game.simpleTrade.sync(s);
 
 this.render();
 
 }
 
-serialize(){
-
-return{
-offerA:this.offerA,
-offerB:this.offerB,
-goldA:this.goldA,
-goldB:this.goldB,
-acceptA:this.acceptA,
-acceptB:this.acceptB
-};
-
-}
-
-receiveSocket(data){
-
-if(data.type!=="update") return;
-
-Object.assign(this,data.state);
-
-this.render();
-
-}
 
 async checkTrade(){
 
-if(!(this.acceptA && this.acceptB)) return;
+const s=this.session;
 
-for(const id of this.offerA){
+if(!(s.acceptA && s.acceptB)) return;
 
-const item=this.a.items.get(id);
+for(const o of s.offerA){
+
+const item=s.actorA.items.get(o.id);
+
 const data=item.toObject();
 
-await this.b.createEmbeddedDocuments("Item",[data]);
-await item.delete();
+data.system.quantity=o.qty;
+
+await s.actorB.createEmbeddedDocuments("Item",[data]);
+
+await item.update({
+"system.quantity":item.system.quantity-o.qty
+});
 
 }
 
-for(const id of this.offerB){
+for(const o of s.offerB){
 
-const item=this.b.items.get(id);
+const item=s.actorB.items.get(o.id);
+
 const data=item.toObject();
 
-await this.a.createEmbeddedDocuments("Item",[data]);
-await item.delete();
+data.system.quantity=o.qty;
+
+await s.actorA.createEmbeddedDocuments("Item",[data]);
+
+await item.update({
+"system.quantity":item.system.quantity-o.qty
+});
 
 }
 
-const gpA=this.a.system.currency.gp||0;
-const gpB=this.b.system.currency.gp||0;
 
-await this.a.update({"system.currency.gp":gpA-this.goldA+this.goldB});
-await this.b.update({"system.currency.gp":gpB-this.goldB+this.goldA});
+await s.actorA.update({
+"system.currency.gp":
+(s.actorA.system.currency.gp||0)-s.goldA+s.goldB
+});
+
+await s.actorB.update({
+"system.currency.gp":
+(s.actorB.system.currency.gp||0)-s.goldB+s.goldA
+});
 
 ui.notifications.info("Trade completed.");
 
