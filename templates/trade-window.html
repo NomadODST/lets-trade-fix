@@ -1,18 +1,20 @@
-<div class="trade-window">
+<div class="trade-ui">
 
 <div class="trade-column">
 
 <h2>{{source.name}}</h2>
 
 <ul>
-{{#each sourceItems}}
-<li>
+{{#each itemsA}}
+<li class="item-a" data-id="{{this.id}}">
 <img src="{{this.img}}" width="24">
 {{this.name}}
-<button class="give-item" data-item="{{this.id}}">→</button>
 </li>
 {{/each}}
 </ul>
+
+<label>Gold</label>
+<input class="gold-a" type="number" value="0">
 
 </div>
 
@@ -21,24 +23,21 @@
 <h2>{{target.name}}</h2>
 
 <ul>
-{{#each targetItems}}
-<li>
-<button class="take-item" data-item="{{this.id}}">←</button>
+{{#each itemsB}}
+<li class="item-b" data-id="{{this.id}}">
 <img src="{{this.img}}" width="24">
 {{this.name}}
 </li>
 {{/each}}
 </ul>
 
+<label>Gold</label>
+<input class="gold-b" type="number" value="0">
+
 </div>
 
-<div class="trade-gold-section">
-
-<label>Gold</label>
-<input type="number" name="gold" value="0">
-
-<button class="trade-gold">Transfer Gold</button>
-
+<div class="trade-actions">
+<button class="accept-trade">Accept Trade</button>
 </div>
 
 </div>
