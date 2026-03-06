@@ -19,7 +19,7 @@ border-radius:8px;
 .trade-side ul{
 list-style:none;
 padding:0;
-max-height:350px;
+max-height:300px;
 overflow-y:auto;
 }
 
@@ -28,11 +28,18 @@ display:flex;
 align-items:center;
 gap:6px;
 padding:4px;
-cursor:pointer;
+cursor:grab;
 }
 
 .trade-side li:hover{
 background:#3b3b3b;
+}
+
+.offer-slot{
+margin-top:10px;
+padding:10px;
+border:2px dashed #555;
+text-align:center;
 }
 
 .trade-actions{
