@@ -9,16 +9,22 @@
 {{#each itemsA}}
 <div class="item" data-id="{{id}}" data-side="A">
 
-<img src="{{img}}">
+<img src="{{img}}" class="trade-icon">
 
-<div class="item-info">
-<div class="name">{{name}}</div>
-<div class="meta">
+<div class="trade-item-info">
+
+<div class="trade-name">
+{{name}}
+</div>
+
+<div class="trade-meta">
 Qty: {{quantity}} • Value: {{price}} gp
 </div>
+
 </div>
 
 </div>
+  
 {{/each}}
 
 </div>
@@ -40,13 +46,18 @@ Gold:
 {{#each itemsB}}
 <div class="item" data-id="{{id}}" data-side="B">
 
-<img src="{{img}}">
+<img src="{{img}}" class="trade-icon">
 
-<div class="item-info">
-<div class="name">{{name}}</div>
-<div class="meta">
+<div class="trade-item-info">
+
+<div class="trade-name">
+{{name}}
+</div>
+
+<div class="trade-meta">
 Qty: {{quantity}} • Value: {{price}} gp
 </div>
+
 </div>
 
 </div>
