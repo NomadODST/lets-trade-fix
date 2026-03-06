@@ -5,11 +5,11 @@
 "version":"3.5.0",
 "authors":[{"name":"Konstantin Zahn"}],
 "compatibility":{"minimum":"12","verified":"12"},
-"scripts":[
-"scripts/trade.js",
-"scripts/trade-session.js",
-"scripts/trade-socket.js",
-"scripts/trade-app.js"
+"scripts": [
+  "scripts/trade-session.js",
+  "scripts/trade-socket.js",
+  "scripts/trade-app.js",
+  "scripts/trade.js"
 ],
 "styles":["styles/trade.css"],
 "url":"https://github.com/NomadODST/simple-token-trade",
