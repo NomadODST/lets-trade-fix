@@ -1,7 +1,5 @@
-// Create global namespace immediately
 globalThis.simpleTrade = globalThis.simpleTrade || {};
 
-// Ensure game namespace exists as soon as possible
 Hooks.once("init", () => {
 
   game.simpleTrade = globalThis.simpleTrade;
@@ -11,4 +9,5 @@ Hooks.once("init", () => {
   }
 
   console.log("Simple Token Trade | Namespace ready");
+
 });
