@@ -28,20 +28,9 @@ display:flex;
 align-items:center;
 gap:6px;
 padding:4px;
-cursor:grab;
+cursor:pointer;
 }
 
 .trade-side li:hover{
 background:#3b3b3b;
-}
-
-.offer-slot{
-margin-top:10px;
-padding:10px;
-border:2px dashed #555;
-text-align:center;
-}
-
-.trade-actions{
-text-align:center;
 }
