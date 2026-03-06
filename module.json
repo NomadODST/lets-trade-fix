@@ -1,17 +1,19 @@
 {
-"id":"simple-token-trade",
-"title":"Simple Token Trade",
-"description":"MMO style token trading system for DnD5e.",
-"version":"3.5.0",
-"authors":[{"name":"Konstantin Zahn"}],
-"compatibility":{"minimum":"12","verified":"12"},
-"scripts": [
-  "scripts/trade-session.js",
-  "scripts/trade-socket.js",
-  "scripts/trade-app.js",
-  "scripts/trade.js"
-],
-"styles":["styles/trade.css"],
+  "id": "simple-token-trade",
+  "title": "Simple Token Trade",
+  "version": "3.5.0",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "12"
+  },
+  "scripts": [
+    "scripts/namespace.js",
+    "scripts/trade-session.js",
+    "scripts/trade-socket.js",
+    "scripts/trade-app.js",
+    "scripts/trade.js"
+  ],
+  "styles": ["styles/trade.css"],
 "url":"https://github.com/NomadODST/simple-token-trade",
 "manifest":"https://raw.githubusercontent.com/NomadODST/simple-token-trade/main/module.json",
 "download":"https://github.com/NomadODST/simple-token-trade/archive/refs/heads/main.zip"
