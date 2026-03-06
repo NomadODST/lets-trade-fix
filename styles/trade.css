@@ -1,1 +1,31 @@
-1
+.trade-window{
+display:flex;
+gap:20px;
+}
+
+.trade-column{
+flex:1;
+background:#1e1e1e;
+padding:10px;
+border-radius:6px;
+}
+
+.trade-column ul{
+list-style:none;
+padding:0;
+}
+
+.trade-column li{
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:4px;
+}
+
+.trade-column img{
+margin-right:6px;
+}
+
+.trade-gold-section{
+margin-top:10px;
+}
