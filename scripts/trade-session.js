@@ -1,54 +1,72 @@
-class TradeSession{
+/* -------------------------------------------- */
+/* Namespace sicherstellen */
+/* -------------------------------------------- */
 
-constructor(a,b){
+globalThis.simpleTrade ??= {};
+game.simpleTrade ??= simpleTrade;
 
-this.id=randomID();
 
-this.actorA=a;
-this.actorB=b;
+/* -------------------------------------------- */
+/* TradeSession Klasse */
+/* -------------------------------------------- */
 
-this.offerA=[];
-this.offerB=[];
+class TradeSession {
 
-this.goldA=0;
-this.goldB=0;
+  constructor(actorA, actorB) {
 
-this.acceptA=false;
-this.acceptB=false;
+    this.id = randomID();
+
+    this.actorA = actorA;
+    this.actorB = actorB;
+
+    this.offerA = [];
+    this.offerB = [];
+
+    this.goldA = 0;
+    this.goldB = 0;
+
+    this.acceptA = false;
+    this.acceptB = false;
+
+  }
+
+  open() {
+
+    this.app = new game.simpleTrade.TradeApp(this);
+    this.app.render(true);
+
+    game.simpleTrade.sessions ??= {};
+    game.simpleTrade.sessions[this.id] = this;
+
+  }
+
+  resetAccept() {
+
+    this.acceptA = false;
+    this.acceptB = false;
+
+  }
+
+  serialize() {
+
+    return {
+      offerA: this.offerA,
+      offerB: this.offerB,
+      goldA: this.goldA,
+      goldB: this.goldB,
+      acceptA: this.acceptA,
+      acceptB: this.acceptB
+    };
+
+  }
 
 }
 
-open(){
 
-this.app=new game.simpleTrade.TradeApp(this);
+/* -------------------------------------------- */
+/* Registrierung */
+/* -------------------------------------------- */
 
-this.app.render(true);
+game.simpleTrade.TradeSession = TradeSession;
 
-game.simpleTrade.sessions[this.id]=this;
-
-}
-
-resetAccept(){
-
-this.acceptA=false;
-this.acceptB=false;
-
-}
-
-serialize(){
-
-return{
-offerA:this.offerA,
-offerB:this.offerB,
-goldA:this.goldA,
-goldB:this.goldB,
-acceptA:this.acceptA,
-acceptB:this.acceptB
-};
-
-}
-
-}
-
-if(!game.simpleTrade) game.simpleTrade={};
-game.simpleTrade.TradeSession=TradeSession;
+console.log("Simple Token Trade | TradeSession registered");
